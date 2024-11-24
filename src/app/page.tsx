@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import PostCard from "@/components/posts/PostCard";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Post {
   _id: string;
@@ -22,8 +23,10 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // In a real application, this would come from your authentication system
   const currentUserId = "user123"; // Placeholder user ID
@@ -31,15 +34,24 @@ export default function Home() {
   const fetchPosts = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch(
         `/api/posts?page=${page}&sortBy=${sortBy}&order=${sortOrder}`
       );
-      if (!response.ok) throw new Error("Failed to fetch posts");
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch posts");
+      }
+
       const data = await response.json();
       setPosts(data.posts);
       setTotalPages(data.totalPages);
     } catch (error) {
       console.error("Error fetching posts:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to fetch posts"
+      );
     } finally {
       setLoading(false);
     }
@@ -51,30 +63,52 @@ export default function Home() {
 
   const handleSubmitPost = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!newPostContent.trim()) {
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
+      setError(null);
+
       const response = await fetch("/api/posts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          content: newPostContent,
+          content: newPostContent.trim(),
           userId: currentUserId,
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to create post");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create post");
+      }
 
       setNewPostContent("");
-      setPage(1); // Reset to first page
-      fetchPosts();
+      setPage(1);
+      await fetchPosts();
     } catch (error) {
       console.error("Error creating post:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to create post"
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8">
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       <form onSubmit={handleSubmitPost} className="mb-8">
         <textarea
           value={newPostContent}
@@ -82,14 +116,15 @@ export default function Home() {
           className="w-full p-4 border rounded-lg resize-none"
           rows={4}
           placeholder="What's on your mind?"
+          disabled={isSubmitting}
         />
         <div className="mt-2 flex justify-end">
           <button
             type="submit"
             className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
-            disabled={!newPostContent.trim() || loading}
+            disabled={!newPostContent.trim() || isSubmitting || loading}
           >
-            Post
+            {isSubmitting ? "Posting..." : "Post"}
           </button>
         </div>
       </form>
@@ -103,6 +138,7 @@ export default function Home() {
               setPage(1);
             }}
             className="p-2 border rounded"
+            disabled={loading}
           >
             <option value="createdAt">Date</option>
             <option value="likes">Most Liked</option>
@@ -115,6 +151,7 @@ export default function Home() {
               setPage(1);
             }}
             className="p-2 border rounded"
+            disabled={loading}
           >
             <option value="desc">Newest First</option>
             <option value="asc">Oldest First</option>

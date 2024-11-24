@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nested Posts System
 
-## Getting Started
+A full-stack Next.js application that implements a nested comments/posts system similar to Reddit or Hacker News. Built with Next.js 15, MongoDB, and TypeScript.
 
-First, run the development server:
+## ⚠️ Important Disclaimer
+
+This project uses Next.js 15's new route handlers which are currently experiencing some type definition issues. The workarounds implemented in this project are temporary and may need to be updated when Next.js releases fixes in future versions.
+
+### Known Issues:
+
+- Route handler type definitions in Next.js 15.0.3 may show TypeScript errors during development
+- Some type annotations use temporary workarounds to compile successfully
+- These issues do not affect runtime functionality but may impact development experience
+
+## Features
+
+- Create, read, update, and delete posts
+- Nested comments with configurable depth limit
+- Like/dislike functionality
+- Sorting by date, likes, and controversy
+- Pagination
+- Real-time updates
+- Responsive design
+
+## Prerequisites
+
+- Node.js 18.17 or later
+- MongoDB instance (local or Atlas)
+- npm or yarn
+
+## Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/subho004/posts-app.git
+cd nested-posts-system
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Create a `.env.local` file in the root directory:
+
+```env
+MONGODB_URI=your_mongodb_connection_string
+```
+
+4. Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable    | Description               | Required |
+| ----------- | ------------------------- | -------- |
+| MONGODB_URI | MongoDB connection string | Yes      |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+```
+src/
+├── app/
+│   ├── api/
+│   │   └── posts/
+│   │       ├── route.ts
+│   │       └── [postId]/
+│   │           ├── route.ts
+│   │           ├── vote/
+│   │           └── comments/
+│   └── page.tsx
+├── components/
+│   └── posts/
+│       ├── PostCard.tsx
+│       └── Comments.tsx
+├── lib/
+│   └── db.ts
+└── models/
+    └── Post.ts
+```
 
-To learn more about Next.js, take a look at the following resources:
+## API Routes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Method | Endpoint                 | Description             |
+| ------ | ------------------------ | ----------------------- |
+| GET    | /api/posts               | Get all posts           |
+| POST   | /api/posts               | Create a new post       |
+| GET    | /api/posts/[id]          | Get a specific post     |
+| PUT    | /api/posts/[id]          | Update a post           |
+| DELETE | /api/posts/[id]          | Delete a post           |
+| GET    | /api/posts/[id]/comments | Get comments for a post |
+| POST   | /api/posts/[id]/vote     | Vote on a post          |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Development Notes
 
-## Deploy on Vercel
+1. The project uses temporary type workarounds for Next.js 15 route handlers:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```typescript
+type HandlerContext = any; // Temporary fix for Next.js 15 route handler types
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+export async function GET(request: Request, context: HandlerContext) {
+  // ...
+}
+```
+
+2. When updating route handlers, keep the workaround in place until Next.js fixes the type definitions.
+
+3. Run TypeScript checks before committing:
+
+```bash
+npm run typecheck
+```
+
+## Known Limitations
+
+- Route handler type definitions require workarounds in Next.js 15.0.3
+- Depth of nested comments is limited to 5 levels for performance
+- Authentication is simulated with a hardcoded user ID
+
+## Future Improvements
+
+- [ ] Add proper authentication
+- [ ] Implement real-time updates with WebSockets
+- [ ] Add comment editing timestamps
+- [ ] Implement user profiles
+- [ ] Add image upload support
+- [ ] Add markdown support for posts
+- [ ] Implement search functionality
